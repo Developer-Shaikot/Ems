@@ -1,0 +1,53 @@
+Zettabyte Technology Incorporation
+Critical Workflow Engineering Exercise
+Context:
+You are building a core appointment scheduling engine for a hospital system.
+This system must prioritize correctness, safety, and auditability.
+
+You may use the internet (docs, blogs).
+Please do NOT use AI tools.
+Use TypeScript (ES6+).
+Focus on clarity, assumptions, and trade-offs.
+Partial solutions with good reasoning are acceptable.
+
+--------------------------------------------------
+
+Problem: Safe Appointment Scheduling Engine
+
+type Appointment = {
+  id: string;
+  doctorId: string;
+  patientId: string;
+  start: number; // timestamp
+  end: number;   // timestamp
+  type: "NORMAL" | "EMERGENCY";
+  approvedBy?: string; // required for EMERGENCY
+};
+
+Task:
+Implement a function that determines whether a candidate appointment
+can be scheduled.
+
+function canSchedule(
+  existing: Appointment[],
+  candidate: Appointment
+): {
+  allowed: boolean;
+  reason?: string;
+  warning?: string;
+}
+
+Rules:
+1. A doctor cannot have overlapping NORMAL appointments.
+2. EMERGENCY appointments may overlap NORMAL ones but must be approved.
+3. NORMAL appointments may NOT overlap EMERGENCY appointments.
+4. Appointments ending exactly when another starts are allowed.
+5. If appointments start within 5 minutes of another, allow but return a warning.
+6. Every rejection must include a reason.
+
+Additionally (no code required, explain in comments or notes):
+- How would you prevent race conditions in a multi-server setup?
+- What assumptions are you making?
+- What would you explicitly not solve yet?
+
+--------------------------------------------------

@@ -20,7 +20,7 @@ async function main() {
     console.log('✅ Created admin user:', admin.email);
 
     // Create HR user
-    const hrPassword = await bcrypt.hash('hr123', 10);
+    const hrPassword = await bcrypt.hash('hr123456', 10);
     const hr = await prisma.user.upsert({
         where: { email: 'hr@ems.com' },
         update: {},
@@ -125,7 +125,7 @@ async function main() {
     console.log('');
     console.log('HR Manager:');
     console.log('  Email: hr@ems.com');
-    console.log('  Password: hr123');
+    console.log('  Password: hr123456');
     console.log('');
     console.log('Employee:');
     console.log('  Email: john.doe@ems.com');

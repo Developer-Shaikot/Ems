@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import api from '@/lib/api';
+import { Building2, Plus, Edit, Trash2 } from 'lucide-react';
 import { authService } from '@/lib/auth';
+
+interface Department {
+    id: string;
+    name: string;
+    description: string | null;
+    _count: {
+        employees: number;
+    };
+}
 
 export default function DepartmentsPage() {
     const [departments, setDepartments] = useState<Department[]>([]);
@@ -16,13 +27,53 @@ export default function DepartmentsPage() {
         fetchDepartments();
     }, []);
 
-    // ... [fetchDepartments stays same]
+    const fetchDepartments = async () => {
+        try {
+            const { data } = await api.get('/departments');
+            setDepartments(data);
+        } catch (error) {
+            console.error('Failed to fetch departments:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    // ... [handleSubmit stays same]
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-    // ... [handleEdit same]
+        try {
+            if (editingId) {
+                await api.patch(`/departments/${editingId}`, formData);
+            } else {
+                await api.post('/departments', formData);
+            }
+            setFormData({ name: '', description: '' });
+            setEditingId(null);
+            setShowForm(false);
+            fetchDepartments();
+        } catch (error) {
+            console.error('Failed to save department:', error);
+            alert('Failed to save department');
+        }
+    };
 
-    // ... [handleDelete same]
+    const handleEdit = (dept: Department) => {
+        setFormData({ name: dept.name, description: dept.description || '' });
+        setEditingId(dept.id);
+        setShowForm(true);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure? This will affect all employees in this department.')) return;
+
+        try {
+            await api.delete(`/departments/${id}`);
+            fetchDepartments();
+        } catch (error) {
+            console.error('Failed to delete department:', error);
+            alert('Failed to delete department');
+        }
+    };
 
     const isAdminOrHR = user && (user.role === 'ADMIN' || user.role === 'HR');
     const isAdmin = user && user.role === 'ADMIN';

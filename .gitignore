@@ -29,6 +29,6 @@
 .DS_Store
 
 # Document Conversion Artifacts
-TECHNICAL_DOCUMENTATION.pdf
-TECHNICAL_DOCUMENTATION.docx
+# TECHNICAL_DOCUMENTATION.pdf
+# TECHNICAL_DOCUMENTATION.docx
 convert_docs.py

@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: ems-backend
+    name: ems-shaikot-backend
     runtime: node
     plan: free
     rootDir: backend
-    buildCommand: npm install && prisma generate && npx prisma db push --accept-data-loss && npm run seed && npm run build
+    buildCommand: npm install && npx prisma generate && npx prisma db push --accept-data-loss && npm run build && npm run seed
     startCommand: node dist/main
     envVars:
       - key: PORT
@@ -16,13 +16,10 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: ems-frontend
-          property: host
+        value: https://ems-shaikot-frontend.onrender.com
 
   - type: web
-    name: ems-frontend
+    name: ems-shaikot-frontend
     runtime: node
     plan: free
     rootDir: frontend
@@ -30,7 +27,6 @@ services:
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: ems-backend
-          property: host
+        value: https://ems-shaikot-backend.onrender.com
+      - key: NODE_ENV
+        value: production

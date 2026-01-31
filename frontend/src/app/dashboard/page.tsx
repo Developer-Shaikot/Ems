@@ -5,14 +5,40 @@ import { authService, User } from '@/lib/auth';
 import { Users, Calendar, FileText, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
+import { dashboardService, DashboardStats } from '@/lib/dashboard';
+
 export default function DashboardPage() {
     const [user, setUser] = useState<User | null>(null);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setUser(authService.getStoredUser());
+        const userData = authService.getStoredUser();
+        setUser(userData);
+
+        const fetchStats = async () => {
+            try {
+                const data = await dashboardService.getStats();
+                setStats(data);
+            } catch (error) {
+                console.error('Failed to fetch dashboard stats:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (userData) {
+            fetchStats();
+        } else {
+            setLoading(false);
+        }
     }, []);
 
     const isAdminOrHR = user && (user.role === 'ADMIN' || user.role === 'HR');
+
+    if (loading) {
+        return <div className="p-6">Loading dashboard...</div>;
+    }
 
     return (
         <div className="space-y-6">
@@ -31,14 +57,14 @@ export default function DashboardPage() {
                     <>
                         <StatCard
                             title="Total Employees"
-                            value="--"
+                            value={stats?.totalEmployees?.toString() || "0"}
                             icon={<Users className="w-8 h-8" />}
                             color="blue"
                             href="/dashboard/employees"
                         />
                         <StatCard
                             title="Departments"
-                            value="--"
+                            value={stats?.totalDepartments?.toString() || "0"}
                             icon={<TrendingUp className="w-8 h-8" />}
                             color="green"
                             href="/dashboard/departments"
@@ -46,15 +72,15 @@ export default function DashboardPage() {
                     </>
                 )}
                 <StatCard
-                    title="Today's Attendance"
-                    value="--"
+                    title={isAdminOrHR ? "Today's Attendance" : "My Attendance"}
+                    value={stats?.todayAttendance?.toString() || (isAdminOrHR ? "0" : "Not Marked")}
                     icon={<Calendar className="w-8 h-8" />}
                     color="purple"
                     href="/dashboard/attendance"
                 />
                 <StatCard
-                    title="Pending Leaves"
-                    value="--"
+                    title={isAdminOrHR ? "Pending Leaves" : "My Pending Leaves"}
+                    value={stats?.pendingLeaves?.toString() || "0"}
                     icon={<FileText className="w-8 h-8" />}
                     color="orange"
                     href="/dashboard/leaves"

@@ -36,7 +36,11 @@ export default function LeavesPage() {
 
     const fetchLeaves = async () => {
         try {
-            const { data } = await api.get('/leaves');
+            const params: any = {};
+            if (user?.role === 'EMPLOYEE' && user?.employee) {
+                params.employeeId = user.employee.id;
+            }
+            const { data } = await api.get('/leaves', { params });
             setLeaves(data);
         } catch (error) {
             console.error('Failed to fetch leaves:', error);

@@ -30,7 +30,11 @@ export default function AttendancePage() {
 
     const fetchAttendances = async () => {
         try {
-            const { data } = await api.get('/attendance');
+            const params: any = {};
+            if (user?.role === 'EMPLOYEE' && user?.employee) {
+                params.employeeId = user.employee.id;
+            }
+            const { data } = await api.get('/attendance', { params });
             setAttendances(data);
         } catch (error) {
             console.error('Failed to fetch attendance:', error);

@@ -6,6 +6,7 @@ import { EmployeeModule } from './employee/employee.module';
 import { DepartmentModule } from './department/department.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { LeaveModule } from './leave/leave.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
     imports: [
@@ -14,6 +15,7 @@ import { LeaveModule } from './leave/leave.module';
         }),
         PrismaModule,
         AuthModule,
+        DashboardModule,
         EmployeeModule,
         DepartmentModule,
         AttendanceModule,

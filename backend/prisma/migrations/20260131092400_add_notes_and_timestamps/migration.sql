@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Leave" ADD COLUMN "approvedAt" DATETIME;
+ALTER TABLE "Leave" ADD COLUMN "notes" TEXT;
+ALTER TABLE "Leave" ADD COLUMN "rejectedAt" DATETIME;

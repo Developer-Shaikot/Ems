@@ -7,7 +7,11 @@ async function bootstrap() {
 
     // Enable CORS
     app.enableCors({
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        origin: [
+            process.env.FRONTEND_URL || 'http://localhost:3000',
+            'https://ems-shaikot-frontend-3o2l.onrender.com',
+            'https://ems-shaikot-frontend.onrender.com'
+        ],
         credentials: true,
     });
 

@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: ems-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && prisma generate && npm run build
+    startCommand: node dist/main
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        value: file:./dev.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: ems-frontend
+          property: host
+
+  - type: web
+    name: ems-frontend
+    runtime: node
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: ems-backend
+          property: host

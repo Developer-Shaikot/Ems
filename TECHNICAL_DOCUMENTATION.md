@@ -1,97 +1,140 @@
-# Technical Documentation: Employee Management System (EMS)
-
-## 1. Executive Summary
-The Employee Management System (EMS) is a modern, full-stack web application designed to streamline human resource operations, including employee tracking, department management, attendance logging, and leave processing. The system is built with a focus on performance, type safety, and modularity.
+# Technical Architecture & System Documentation
+## Employee Management System (EMS)
 
 ---
 
-## 2. Technology Stack & Rationale
+## 🏗️ 1. Infrastructure & Tech Stack Rationale
 
-### 2.1 Backend: NestJS
-**Why NestJS?**
-- **Architecture**: NestJS provides an out-of-the-box application architecture which allows developers and teams to create highly testable, scalable, loosely coupled, and easily maintainable applications.
-- **TypeScript First**: Leverages the power of TypeScript for early error detection and better developer tooling.
-- **Modularity**: Uses a module-based system (`AuthModule`, `EmployeeModule`, etc.) that keeps features encapsulated and organized.
-- **Dependency Injection**: Simplifies testing and promotes better code structure.
+### 1.1 Core Architecture
+The system follows a **Decoupled Client-Server Architecture**, ensuring that the Frontend and Backend can scale independently and communicate via a secure RESTful API.
 
-### 2.2 Frontend: Next.js 15
-**Why Next.js?**
-- **App Router**: Utilizes the latest React features like Server Components for better performance and SEO.
-- **Developer Experience**: Fast Refresh and optimized builds.
-- **Turbopack Integration**: As the next-generation successor to Webpack, Turbopack provides lightning-fast HMR (Hot Module Replacement) and build times.
-
-### 2.3 ORM: Prisma
-**Why Prisma?**
-- **Type Safety**: Prisma generates a client that is tailored specifically to your database schema, providing full TypeScript intellisense.
-- **Migrations**: Simplifies database evolution with `prisma migrate`, ensuring the schema is always in sync with the code.
-- **Intuitive API**: Replaces complex SQL queries with a clean, readable JavaScript/TypeScript API.
-
-### 2.4 Database: SQLite
-**Why SQLite?**
-- **Zero Configuration**: No need to install a separate database server (like PostgreSQL or MySQL).
-- **Portability**: The entire database is stored in a single file (`backend/dev.db`), making it easy to share and set up across different environments.
-- **Local Development**: Ideal for this project's current development phase to bypass complex environment setup issues while maintaining standard SQL features.
+### 1.2 The Stack
+| Component | Technology | Rationale |
+| :--- | :--- | :--- |
+| **Backend** | **NestJS** | Provides a robust, disciplined architecture with built-in support for Dependency Injection and modularity. |
+| **Frontend** | **Next.js 15** | App Router and React Server Components bring superior performance and SEO capabilities. |
+| **Build Tool** | **Turbopack** | Hand-picked for the frontend to provide the fastest possible HMR and build speeds in a modern React environment. |
+| **ORM** | **Prisma** | Offers unparalleled type safety and auto-generated clients, reducing runtime errors and boilerplate. |
+| **Database** | **SQLite** | Chosen for local development to ensure zero-config setups and 100% portability via a single file (`dev.db`). |
 
 ---
 
-## 3. Database Architecture
+## 📊 2. System Flow & Diagrams
 
-### 3.1 Data Model
-The database is managed via Prisma and stored locally in `backend/dev.db`.
+### 2.1 High-Level System Architecture
+![System Architecture](assets/docs/architecture.png)
 
-**Key Entities:**
-- **User**: Handles authentication and role-based access (ADMIN, HR, EMPLOYEE).
-- **Employee**: Stores personal details, salary, and relates to a Department.
-- **Department**: Organizational units within the company.
-- **Attendance**: Daily logs of check-in/check-out times for employees.
-- **Leave**: Management of leave requests (Sick, Casual, Annual) and their approval workflows.
+```mermaid
+graph TD
+    User["User (Browser)"] <--> Frontend["Next.js Frontend (Port: 3002)"]
+    Frontend <-- "REST API (JSON/JWT)" --> Backend["NestJS Backend (Port: 3001)"]
+    Backend <--> Prisma["Prisma ORM"]
+    Prisma <--> SQLite["SQLite DB (dev.db)"]
+    
+    subgraph "Internal Backend"
+    Backend --> AuthModule["Auth Module"]
+    Backend --> EmpModule["Employee Module"]
+    Backend --> LeaveModule["Leave Module"]
+    end
+```
 
-### 3.2 Enum Handling in SQLite
-Since SQLite does not natively support Enum types, the system uses **String validation** at the application level (NestJS `class-validator`) and comments in the `schema.prisma` to maintain data integrity.
+### 2.2 Database Entity Relationship (ER) Diagram
+![ER Diagram](assets/docs/er_diagram.png)
+
+```mermaid
+erDiagram
+    User ||--o| Employee : "belongs to"
+    Department ||--o{ Employee : "contains"
+    Employee ||--o{ Attendance : "records"
+    Employee ||--o{ Leave : "requests"
+
+    User {
+        string id PK
+        string email
+        string password
+        string role
+    }
+    Employee {
+        string id PK
+        string name
+        string email
+        string departmentId FK
+        float salary
+    }
+    Attendance {
+        string id PK
+        string employeeId FK
+        datetime checkIn
+        string status
+    }
+    Leave {
+        string id PK
+        string employeeId FK
+        string type
+        string status
+    }
+```
+
+### 2.3 Authentication Flow
+![Authentication Flow](assets/docs/auth_flow.png)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant D as DB
+
+    U->>F: Enter Credentials
+    F->>B: POST /auth/login
+    B->>D: Check User
+    D-->>B: User Found
+    B->>B: Generate JWT
+    B-->>F: Return JWT + User Info
+    F->>F: Store JWT in Cookies/LocalStorage
+    F-->>U: Show Dashboard
+```
 
 ---
 
-## 4. System Components
+## ⚙️ 3. Core Logic Implementation
 
-### 4.1 Authentication System
-- **JWT-based Authentication**: Secure, stateless session management.
-- **Role-Based Access Control (RBAC)**: Custom `@Roles()` decorator and `RolesGuard` to protect sensitive endpoints.
-- **Bcrypt Hashing**: Industry-standard password encryption.
+### 3.1 Role-Based Access Control (RBAC)
+The system utilizes a custom `@Roles()` decorator and a `RolesGuard`. This ensures that sensitive operations (like deleting an employee or approving a leave) are strictly limited to authorized roles.
 
-### 4.2 Frontend Features
-- **Responsive Dashboard**: Built with Tailwind CSS for seamless use on desktop and mobile.
-- **Dynamic Forms**: Integrated with validation for adding/editing employees and requesting leaves.
-- **Real-time Stats**: Dashboard summaries for HR and Admin users.
+**Access Matrix:**
+- **ADMIN**: Global access.
+- **HR**: Manage records, monitor attendance, process leaves.
+- **EMPLOYEE**: Personal dashboard, self-check-in, leave requests.
 
----
+### 3.2 Attendance Logic
+- **Constraint**: Only one record per employee per day.
+- **Status Mapping**: Automated status assignment (PRESENT, LATE, ABSENT) based on check-in timestamps.
 
-## 5. Development Workflow (Turbopack)
-The project utilizes **Turbopack** for the frontend development server. 
-- **Performance**: Up to 700x faster than Webpack in large projects.
-- **Efficiency**: Only rebuilds the parts of the app that change, saving significant development time.
-
----
-
-## 6. Setup & Deployment Guide
-
-### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
-
-### Installation
-1. Install root dependencies: `npm install`
-2. Install sub-project dependencies: `npm run install-all`
-
-### Database Setup
-1. Generate Prisma Client: `npx prisma generate` (in backend)
-2. Run Migrations: `npx prisma migrate dev`
-3. Seed Data: `npx ts-node prisma/seed.ts`
-
-### Running the Application
-- **Backend**: `npm run start:win` (Optimized for Windows paths)
-- **Frontend**: `npm run dev` (Runs with Turbopack)
+### 3.3 Leave Workflow
+1. **Initiation**: Employee submits a request.
+2. **Pending State**: Request is visible to HR/Admin.
+3. **Action**: HR/Admin approves/rejects with comments.
+4. **State Finalization**: Status updates and timestamps are recorded for audit logs.
 
 ---
 
-## 7. Conclusion
-The EMS provides a robust foundation for organizational management by combining the best-in-class tools for backend stability (NestJS), database management (Prisma/SQLite), and frontend speed (Next.js/Turbopack).
+## 🚀 4. Performance Optimization
+
+### 4.1 Turbopack
+By leveraging Turbopack, we've reduced the frontend cold-boot time by significantly. It optimizes the build graph incrementally, ensuring that only the changed modules are re-compiled during development.
+
+### 4.2 SQLite in Production VS Development
+While SQLite is used for local delivery and easy testing, the **Prisma Abstraction Layer** allows for a seamless transition to **PostgreSQL** or **MySQL** in a production environment by simply changing the `DATABASE_URL` in the `.env` file.
+
+---
+
+## 🛠️ 5. Maintenance & Scaling
+- **Migrations**: Always use `npx prisma migrate dev` to maintain schema integrity.
+- **Seeding**: Use `npx ts-node prisma/seed.ts` to refresh the environment with reliable test data.
+- **Frontend Components**: Utilize the `components` folder for atomic UI elements, ensuring reusability across pages.
+
+---
+
+## 📝 6. Conclusion
+The EMS is not just a tool, but a platform built with modern software engineering principles. By combining **Type Safety**, **Modular Architecture**, and **Ultra-Fast Tooling**, it provides a premium experience for both users and developers.
